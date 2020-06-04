@@ -126,8 +126,11 @@ class DotsAndBoxesGame(Game):  #繼承class Game
                 if piece == 8 or piece == 0:
                     print(" ", end=" ")
                     continue
-                if piece == 9 or piece == 7:
-                    piece -= 8
+                if piece == 9 or piece == 7 or piece ==-9 or piece == -7:
+                    if piece>0:
+                        piece -= 8
+                    else:
+                        piece += 8
                     print(DotsAndBoxesGame.square_content[piece], end=" ")
                     continue
                 if piece == -1:

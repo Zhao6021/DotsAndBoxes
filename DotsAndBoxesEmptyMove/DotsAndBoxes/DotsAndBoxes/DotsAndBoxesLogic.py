@@ -70,10 +70,10 @@ class Board():
         """Counts the # pieces of the given color
         (1 for white, -1 for black, 0 for empty spaces)"""
         count = 0
-        for y in range(0,self.enlargeN):
-            for x in range(0,self.enlargeN):
-                if self.pieces[x][y]==8+color:
-                    count += 1
-                if self.pieces[x][y]==8-color:
-                    count -= 1
+        for y in range(2,self.n*2+1,2):
+            for x in range(2,self.n*2+1,2):
+                if self.pieces[x][y]<0:
+                    count += self.pieces[x][y]+8
+                else:
+                    count += self.pieces[x][y]-8
         return count
