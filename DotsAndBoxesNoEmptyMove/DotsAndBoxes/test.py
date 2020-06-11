@@ -17,13 +17,20 @@ if __name__ == "__main__":
         if actionXY[0]==-1:
             break
         action = actionXY[0] * g.getBoardSize() [0] + actionXY[1]
-        board,player = g.getNextState(board,player,action)
+
+        board = g.getCanonicalForm(board,-1)
+        board,player = g.getNextState(board,-player,action)
+        player = -player
+        board = g.getCanonicalForm(board,-1)
 
         Game.display(board)
-
         end = g.getGameEnded(board, 1)
         if end != 0:
             print("winner=",end)
             break
+    
+    board = g.getCanonicalForm(board,-1)
+    end = g.getGameEnded(board, 1)
+    print("winner=",end)
     
     #Game.display(board)

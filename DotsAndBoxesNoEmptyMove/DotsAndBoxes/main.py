@@ -5,18 +5,18 @@ from utils import *
 
 #可以使用dot的dict
 args = dotdict({
-    'numIters': 1,
-    'numEps': 1,              # Number of complete self-play games to simulate during a new iteration.
-    'tempThreshold': 10,        #
+    'numIters': 50,
+    'numEps': 100,              # Number of complete self-play games to simulate during a new iteration.
+    'tempThreshold': 15,        #
     'updateThreshold': 0.6,     # 新網路的勝率門檻 During arena playoff, new neural net will be accepted if threshold or more of games are won.
-    'maxlenOfQueue': 20,    # Number of game examples to train the neural networks.
-    'numMCTSSims': 5,          # Number of games moves for MCTS to simulate.
-    'arenaCompare': 4,         # Number of games to play during arena play to determine if new net will be accepted.
+    'maxlenOfQueue': 20000,    # Number of game examples to train the neural networks.
+    'numMCTSSims': 15,          # Number of games moves for MCTS to simulate.
+    'arenaCompare': 40,         # Number of games to play during arena play to determine if new net will be accepted.
     'cpuct': 1,
 
     'checkpoint': './temp/',
     'load_model': False,
-    'load_folder_file': ('/dev/models/8x100x50','best.pth.tar'),
+    'load_folder_file': ('./temp/','best.pth.tar'),
     'numItersForTrainExamplesHistory': 20,
 
 })
@@ -31,7 +31,9 @@ if __name__ == "__main__":  #__name__ 是前檔案名 當檔案被直接運行�
         nnet.load_checkpoint(args.load_folder_file[0], args.load_folder_file[1])
 
     c = Coach(g, nnet, args) #將 game nnet args傳到 coach中 做初始化
+    '''
     if args.load_model:  #可以load訓練好的範例?
         print("Load trainExamples from file")
         c.loadTrainExamples()
+    '''
     c.learn() #開始訓練

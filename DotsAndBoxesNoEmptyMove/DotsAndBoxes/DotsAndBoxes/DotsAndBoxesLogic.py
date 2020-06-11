@@ -48,7 +48,7 @@ class Board():
         got=False
         for i in self.directions:
             tmpGot = False
-            if self.pieces[move[0]+i[0]][move[1]+i[1]] == 8: #搜尋點的上下左右是否有8
+            if self.pieces[move[0]+i[0]][move[1]+i[1]] == 8 or self.pieces[move[0]+i[0]][move[1]+i[1]] == -8: #搜尋點的上下左右是否有8
                 tmpGot=self.got_point(move[0]+i[0],move[1]+i[1])
                 if tmpGot==True:
                     self.pieces[move[0]+i[0]][move[1]+i[1]]+=color #得分， 8+color
@@ -72,4 +72,6 @@ class Board():
                     count += self.pieces[x][y]+8
                 else:
                     count += self.pieces[x][y]-8
+        
+        count *= color
         return count

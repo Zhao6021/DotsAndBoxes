@@ -117,6 +117,9 @@ class MCTS():
 
         v = self.search(next_s)
 
+        if next_player == 1:
+            v = -v
+
         if (s,a) in self.Qsa:
             self.Qsa[(s,a)] = (self.Nsa[(s,a)]*self.Qsa[(s,a)] + v)/(self.Nsa[(s,a)]+1)
             self.Nsa[(s,a)] += 1
