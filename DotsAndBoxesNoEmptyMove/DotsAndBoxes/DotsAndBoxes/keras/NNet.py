@@ -26,9 +26,9 @@ args = dotdict({
 
 class NNetWrapper(NeuralNet):
     def __init__(self, game):
-        self.nnet = onnet(game, args)   #把遊戲和args傳進OthelloNNet裡
+        self.nnet = onnet(game, args)   #把遊戲和args傳進DotsAndBoxesNNet裡
         self.board_x, self.board_y = game.getBoardSize()   #取得盤面大小並初始化
-        self.action_size = game.getActionSize()            #取得回合數
+        self.action_size = game.getActionSize()            #取得走步種數
 
     def train(self, examples):
         """
