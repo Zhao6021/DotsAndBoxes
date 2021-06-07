@@ -7,6 +7,12 @@ import time, os, sys
 from pickle import Pickler, Unpickler
 from random import shuffle
 
+from multiprocessing import Pool
+import gc
+import multiprocessing as mp
+from DotsAndBoxes.DotsAndBoxesGame import DotsAndBoxesGame as Game
+from DotsAndBoxes.keras.NNet import NNetWrapper as nn  #可以改keras 變成其他的開源學習庫
+from utils import *
 
 class Coach():
     """
@@ -21,6 +27,10 @@ class Coach():
         self.mcts = MCTS(self.game, self.nnet, self.args)  #初始化MCTS
         self.trainExamplesHistory = []    # history of examples from args.numItersForTrainExamplesHistory latest iterations
         self.skipFirstSelfPlay = False    # can be overriden in loadTrainExamples() 用來推翻 loadTrainExamples()這個函式
+        self.multiprocessing = False
+        # self.cpu = mp.cpu_count()
+        self.cpu = 1.5
+        self.maxtasksperchild = 1
 
     def executeEpisode(self):
         """
@@ -42,16 +52,21 @@ class Coach():
         board = self.game.getInitBoard()
         self.curPlayer = 1
         episodeStep = 0
-
         while True:
             episodeStep += 1
             canonicalBoard = self.game.getCanonicalForm(board,self.curPlayer)
             temp = int(episodeStep < self.args.tempThreshold)
-
             pi = self.mcts.getActionProb(canonicalBoard, temp=temp)
             sym = self.game.getSymmetries(canonicalBoard, pi)
+            count = 0
             for b,p in sym:
-                trainExamples.append([b, self.curPlayer, p, None])
+                
+                boardEnccode = self.game.boardEncode(b,self.curPlayer)
+                # boardEnccode = b
+                pEncode = self.nnet.pEncode(p)
+                # pEncode = p
+                trainExamples.append([boardEnccode, self.curPlayer, pEncode, None])
+                count+=1
 
             action = np.random.choice(len(pi), p=pi)
             board, self.curPlayer = self.game.getNextState(board, self.curPlayer, action)
@@ -75,25 +90,38 @@ class Coach():
             print('------ITER ' + str(i) + '------')
             # examples of the iteration
             if not self.skipFirstSelfPlay or i>1:
+                saveSelfPlayTimeLog('------ITER ' + str(i) + '------')
                 iterationTrainExamples = deque([], maxlen=self.args.maxlenOfQueue)
-    
-                eps_time = AverageMeter()
-                bar = Bar('Self Play', max=self.args.numEps)
-                end = time.time()
-    
-                for eps in range(self.args.numEps):
-                    self.mcts = MCTS(self.game, self.nnet, self.args)   # reset search tree
-                    iterationTrainExamples += self.executeEpisode()
-    
-                    # bookkeeping + plot progress
-                    eps_time.update(time.time() - end)
-                    end = time.time()
-                    bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps+1, maxeps=self.args.numEps, et=eps_time.avg,
-                                                                                                               total=bar.elapsed_td, eta=bar.eta_td)
-                    bar.next()
-                bar.finish()
 
-                # save the iteration examples to the history 
+                selfPlayStartTime = time.time()
+
+                if self.multiprocessing:
+                    pool = Pool(processes = self.cpu, maxtasksperchild = self.maxtasksperchild)
+                    for eps in range(self.args.numEps):
+                        self.mcts = MCTS(self.game, self.nnet, self.args)   # reset search tree
+                        # re = pool.apply_async(selfPlay, args=(eps, self.game, self.args))
+                        # iterationTrainExamples += re.get()
+                        re = pool.starmap(selfPlay, [(str(eps), self.args)])
+                        iterationTrainExamples += re[0]
+                        gc.collect()
+
+                    pool.close()
+                    pool.join()
+                else:
+                    for eps in range(self.args.numEps):
+                        selfStartTime = time.time()
+                        
+                        self.mcts = MCTS(self.game, self.nnet, self.args)   # reset search tree
+                        re = self.executeEpisode()
+                        iterationTrainExamples += re
+
+                        print('Episode ',eps,' eps cost time = %.3f'%(time.time()-selfStartTime) ,' sec')
+                        saveSelfPlayTimeLog('Episode ' + str(eps) + ' eps cost time = %.3f'%(time.time()-selfStartTime) + ' sec')
+
+                print('SelfPlay total cost time = %.3f'%(time.time()-selfPlayStartTime),' sec')
+                saveSelfPlayTimeLog('SelfPlay total cost time = %.3f'%(time.time()-selfPlayStartTime) + ' sec')
+                
+                # save the iteration examples to the history
                 self.trainExamplesHistory.append(iterationTrainExamples)
                 
             if len(self.trainExamplesHistory) > self.args.numItersForTrainExamplesHistory:
@@ -101,7 +129,10 @@ class Coach():
                 self.trainExamplesHistory.pop(0)
             # backup history to a file
             # NB! the examples were collected using the model from the previous iteration, so (i-1)  
+            saveStart = time.time()
             self.saveTrainExamples(i-1)
+            saveEnd = time.time()
+            self.saveTimeLog(i,saveEnd-saveStart)
             
             # shuffle examples before training
             trainExamples = []
@@ -158,3 +189,25 @@ class Coach():
             f.closed
             # examples based on the model were already collected (loaded)
             self.skipFirstSelfPlay = True
+
+    def saveTimeLog(self,iter,time):
+        f = open('./log/save_time_log.txt','a')
+        f.write( str(iter) +' iter save with time: '+ str(time/60) +' min\n')
+        f.close
+
+def selfPlay(eps,args):
+    selfStartTime = time.time()
+
+    g = Game(args.boardSize)
+
+    nnet = nn(g)
+    c = Coach(g, nnet, args)
+    re = c.executeEpisode()
+    print('Episode '+ eps +' eps cost time = %.3f'%(time.time()-selfStartTime) ,' sec')
+    saveSelfPlayTimeLog('Episode ' + eps + ' eps cost time = %.3f'%(time.time()-selfStartTime) + ' sec')
+    return re
+
+def saveSelfPlayTimeLog(string):
+        f = open('./log/self_play_time_log.txt','a')
+        f.write(string+'\n')
+        f.close

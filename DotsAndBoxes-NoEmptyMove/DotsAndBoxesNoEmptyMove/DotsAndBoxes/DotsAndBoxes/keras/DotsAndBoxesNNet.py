@@ -2,13 +2,28 @@ import sys
 sys.path.append('..')
 from utils import *
 
+import tensorflow as tf
+# gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.7)
+# config = tf.compat.v1.ConfigProto(allow_soft_placement = True)
+# config.gpu_options.per_process_gpu_memory_fraction = 0.4
+# config.gpu_options.allow_growth = True
+# sess = tf.compat.v1.Session(config=config)
+
 import argparse
+# from tensorflow.keras.models import *
+# from tensorflow.keras.layers import *
+# from tensorflow.keras.optimizers import *
 from keras.models import *
 from keras.layers import *
 from keras.optimizers import *
 
 class DotsAndBoxesNNet():
     def __init__(self, game, args):
+
+        gpu_options = tf.compat.v1.GPUOptions(allow_growth=True)
+        sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(gpu_options=gpu_options,allow_soft_placement = True))
+        tf.compat.v1.keras.backend.set_session(sess)
+
         # game params
         self.board_x, self.board_y = game.getBoardSize()    #初始化盤面大小
         self.action_size = game.getActionSize()             #初始化總行動數

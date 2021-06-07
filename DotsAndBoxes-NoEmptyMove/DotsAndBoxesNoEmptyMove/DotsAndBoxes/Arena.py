@@ -50,11 +50,13 @@ class Arena():
             if valids[action]==0:
                 print(action)
                 assert valids[action] >0
+            # print("Player ", str(curPlayer), 'take action ',action)
             board, curPlayer = self.game.getNextState(board, curPlayer, action)
         if verbose:
             assert(self.display)
             print("Game over: Turn ", str(it), "Result ", str(self.game.getGameEnded(board, 1)))
             self.display(board)
+
         return curPlayer*self.game.getGameEnded(board, curPlayer)
 
     def playGames(self, num, verbose=False):
@@ -89,10 +91,12 @@ class Arena():
             eps += 1
             eps_time.update(time.time() - end)
             end = time.time()
-            bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps, maxeps=maxeps, et=eps_time.avg,
-                                                                                                       total=bar.elapsed_td, eta=bar.eta_td)
+            bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}| Win: {one}:{two}'.format(eps=eps, maxeps=maxeps, et=eps_time.avg,
+                                                                                                       total=bar.elapsed_td, eta=bar.eta_td , one=oneWon ,two = twoWon)
             bar.next()
 
+        print('half')
+        print(oneWon, twoWon, draws)
         self.player1, self.player2 = self.player2, self.player1
         
         for _ in range(num):
@@ -107,8 +111,8 @@ class Arena():
             eps += 1
             eps_time.update(time.time() - end)
             end = time.time()
-            bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}'.format(eps=eps, maxeps=maxeps, et=eps_time.avg,
-                                                                                                       total=bar.elapsed_td, eta=bar.eta_td)
+            bar.suffix  = '({eps}/{maxeps}) Eps Time: {et:.3f}s | Total: {total:} | ETA: {eta:}| Win: {one}:{two}'.format(eps=eps, maxeps=maxeps, et=eps_time.avg,
+                                                                                                       total=bar.elapsed_td, eta=bar.eta_td , one=oneWon ,two = twoWon)
             bar.next()
             
         bar.finish()

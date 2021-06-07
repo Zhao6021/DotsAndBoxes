@@ -29,6 +29,7 @@ class NNetWrapper(NeuralNet):
         self.nnet = onnet(game, args)   #把遊戲和args傳進DotsAndBoxesNNet裡
         self.board_x, self.board_y = game.getBoardSize()   #取得盤面大小並初始化
         self.action_size = game.getActionSize()            #取得走步種數
+        self.game = game
 
     def train(self, examples):
         """
@@ -36,9 +37,19 @@ class NNetWrapper(NeuralNet):
         """
         input_boards, target_pis, target_vs = list(zip(*examples))
         input_boards = np.asarray(input_boards)
-        target_pis = np.asarray(target_pis)
+        # print(target_pis)
+        #decode
+        input_decode_boards = []
+        input_decode_p = []
+        for i in range(0,len(input_boards)):
+            input_decode_boards.append( self.game.boardDecode(input_boards[i]))
+            input_decode_p.append(self.pDecode(target_pis[i]))
+        input_decode_boards = np.array(input_decode_boards , dtype = 'int8')
+        # input_decode_p = np.array(input_decode_p , dtype = 'float32')
+        
+        target_pis = np.asarray(input_decode_p)
         target_vs = np.asarray(target_vs)
-        self.nnet.model.fit(x = input_boards, y = [target_pis, target_vs], batch_size = args.batch_size, epochs = args.epochs)
+        self.nnet.model.fit(x = input_decode_boards, y = [target_pis, target_vs], batch_size = args.batch_size, epochs = args.epochs)
 
     def predict(self, board):
         """
@@ -71,3 +82,27 @@ class NNetWrapper(NeuralNet):
         if not os.path.exists(filepath):
             raise("No model in path {}".format(filepath))
         self.nnet.model.load_weights(filepath)
+
+    def pEncode(self,p):
+        index = []
+        value = []
+        index.append(len(p))
+        value.append(0)
+        for i in range(len(p)):
+            if p[i] != 0:
+                index.append(i)
+                value.append( float(p[i]) )
+        index = np.array(index, dtype = "uint8")
+        value = np.array(value, dtype = "float32")
+        re = []
+        re.append(index)
+        re.append(value)
+        re = np.array(re , dtype = object)
+        return re
+
+    def pDecode(slef,p):
+        re = [0.0 for i in range(p[0][0])]
+        for i in range(1,len(p[0])):
+            re[p[0][i]] = p[1][i]
+
+        return re 

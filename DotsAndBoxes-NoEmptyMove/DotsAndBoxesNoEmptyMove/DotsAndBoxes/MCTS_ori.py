@@ -2,7 +2,7 @@ import math
 import numpy as np
 EPS = 1e-8
 
-class MCTS():
+class MCTS_ori():
     """
     This class handles the MCTS tree.
     """
@@ -70,6 +70,7 @@ class MCTS():
 
         if s not in self.Es:
             self.Es[s] = self.game.getGameEnded(canonicalBoard, 1)
+        
         if self.Es[s]!=0:
             # terminal node
             return -self.Es[s]
